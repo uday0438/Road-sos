@@ -1,0 +1,11 @@
+{
+  "name": "RoadSoS AI",
+  "description": "An AI-Powered Golden Hour Emergency Response and Road Safety Platform",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
