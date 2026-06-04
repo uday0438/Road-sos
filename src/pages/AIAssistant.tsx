@@ -131,9 +131,19 @@ export default function AIAssistant() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          data = { error: `Server returned non-JSON response (${res.status}): ${text.substring(0, 100)}` };
+        }
+      } catch (parseErr) {
+        data = { error: `Failed to parse response: ${parseErr}` };
+      }
 
-      // Handle API key / server errors returned as text
       if (data.text) {
         setMessages((prev) => [
           ...prev,
@@ -144,12 +154,12 @@ export default function AIAssistant() {
             timestamp: new Date().toISOString(),
           },
         ]);
-      } else if (data.error) {
+      } else if (data.error || !res.ok) {
         setMessages((prev) => [
           ...prev,
           {
             id: (Date.now() + 1).toString(),
-            text: `❌ ${data.error}`,
+            text: data.error || `❌ Server error (${res.status}). Please check your configuration.`,
             sender: "ai",
             timestamp: new Date().toISOString(),
           },

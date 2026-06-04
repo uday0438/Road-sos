@@ -63,14 +63,24 @@ User exact location context: ${JSON.stringify(context || {})}`;
     res.json({ text: response.text });
   } catch (error: any) {
     console.error("Gemini API Error:", error?.message || error);
-    const msg = error?.message || "";
-    if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("403")) {
+    const msg = typeof error?.message === "string" ? error.message : JSON.stringify(error || "");
+    const msgLower = msg.toLowerCase();
+    
+    if (msgLower.includes("api_key") || msgLower.includes("401") || msgLower.includes("403") || msgLower.includes("invalid key") || msgLower.includes("unauthorized")) {
       res.status(401).json({
         error: "INVALID_API_KEY",
-        text: "❌ Invalid API key. Make sure your GEMINI_API_KEY in .env starts with 'AIzaSy' and is obtained from aistudio.google.com/app/apikey",
+        text: "❌ Invalid API key. Make sure your GEMINI_API_KEY in your config starts with 'AIzaSy' and is obtained from aistudio.google.com/app/apikey",
+      });
+    } else if (msgLower.includes("429") || msgLower.includes("quota") || msgLower.includes("resource_exhausted") || msgLower.includes("limit: 0")) {
+      res.status(429).json({
+        error: "QUOTA_EXCEEDED",
+        text: "⚠️ Gemini API key quota exceeded. The key you provided has a daily request limit of 0, or has reached its per-minute rate limits. Please generate a new key at aistudio.google.com/app/apikey or wait and try again.",
       });
     } else {
-      res.status(500).json({ error: "SERVER_ERROR", text: "Failed to reach AI. Please try again." });
+      res.status(500).json({ 
+        error: "SERVER_ERROR", 
+        text: `❌ AI connection failed: ${error?.message || "Internal server error"}. Please check your GEMINI_API_KEY config.` 
+      });
     }
   }
 });
